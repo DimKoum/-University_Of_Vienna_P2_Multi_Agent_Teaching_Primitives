@@ -1,0 +1,2 @@
+Autoenc = autoenc_numSamples100000_epochs500_activationReLU_numLayers1__numHidden1024_latSpace25_simplified.pth
+Model = ppo_Construction_Encoded_10x10_AdjMap_Only_25ls_1024numHid_simplified_3000000.zip
