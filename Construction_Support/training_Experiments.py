@@ -25,22 +25,22 @@ def build_autoencoder(autoenc_path=None):
     return autoenc
 
 
-env_id = "ConstructionPrototypeRandom_Original"
-env_id_encoded = ""
-# env = gym.make(env_id, render_mode="none", map_size_x=10, map_size_y=10, n_constructors=5)
+env_id = "ConstructionSupport"
+env_id_encoded = "ConstructionSupport_Encoded"
 
 # Build autoencoder(If env uses one)
-autoencoder_path = None
+autoencoder_path = "Saved_Autoencoders/autoenc2.pth"
+
 autoenc = None
 
 if autoencoder_path is not None:
     autoenc = build_autoencoder(autoenc_path=autoencoder_path)
     env = gym.make(env_id_encoded, render_mode="none", map_size_x=10, map_size_y=10,
-                   autoencoder=autoenc)
+                   autoencoder=autoenc, n_constructors=5)
 else:
-    env = gym.make(env_id, render_mode="none", map_size_x=10, map_size_y=10)
+    env = gym.make(env_id, render_mode="none", map_size_x=10, map_size_y=10, n_constructors=5)
 
-experiment_repetitions = 5
+experiment_repetitions = 1
 training_run_timesteps = 1000000
 
 # Create dynamic lists in a dictionary for holding the info data of each training run
@@ -65,7 +65,7 @@ for i in range(experiment_repetitions):
                        autoencoder=autoenc, n_constructors=5)
         policy = "MlpPolicy"
     else:
-        env = gym.make(env_id, render_mode="none", map_size_x=10, map_size_y=10)
+        env = gym.make(env_id, render_mode="none", map_size_x=10, map_size_y=10,n_constructors=5)
 
     #Train environment
     model = PPO(policy, env, verbose=1)
@@ -124,20 +124,20 @@ for key in info.keys():
 
     dataUtility.line_Plot(x=np.arange(0, len(averages)), y=averages, xLabel="Episode", yLabel=key, title=" ")
 
-plt.suptitle(f"ConstructionPrototypeRandom_Original(Average Training Performance ({experiment_repetitions} runs)")
+plt.suptitle(f"Construction_Support(Average Training Performance ({experiment_repetitions} runs)")
 plt.show()
 
 # Save the averages as a csv file
 df = pd.DataFrame(experiment_data_averages)
-df.to_csv(f"ConstructionPrototypeRandom_Original_{experiment_repetitions}repetitions_Averages.csv",
+df.to_csv(f"ConstructionSupport_{experiment_repetitions}repetitions_Averages_5constructors.csv",
           index=False)
 
 df = pd.DataFrame(experiment_data_standard_deviations)
-df.to_csv(f"ConstructionPrototypeRandom_Original_{experiment_repetitions}repetitions_Standard_Deviations.csv",
+df.to_csv(f"ConstructionSupport_{experiment_repetitions}repetitions_Standard_Deviations_5constructors.csv",
           index=False)
 
 df = pd.DataFrame(experiment_data_variances)
-df.to_csv(f"ConstructionPrototypeRandom_Original_{experiment_repetitions}repetitions_Variances.csv",
+df.to_csv(f"ConstructionSupport_{experiment_repetitions}repetitions_Variances_5constructors.csv",
           index=False)
 
 print("Results saved")

@@ -14,5 +14,14 @@ def registerEnv():
         max_episode_steps=5000
     )
 
+    gym.register(
+        id='ConstructionPrototypeRandom_Original',
+        entry_point='ConstructionPrototypeRandom_Original:ConstructionPrototypeRandomOriginal',
+        max_episode_steps=5000
+    )
+
+
+
+
 
 

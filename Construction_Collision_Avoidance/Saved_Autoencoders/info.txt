@@ -1,0 +1,1 @@
+autoenc1 = autoenc_numSamples100000_epochs100_activationReLU_numLayers1_numHidden2048_latSpace25_directSampling

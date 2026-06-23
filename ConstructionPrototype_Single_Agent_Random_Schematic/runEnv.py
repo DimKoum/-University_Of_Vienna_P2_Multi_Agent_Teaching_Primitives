@@ -15,7 +15,7 @@ env = gym.make("ConstructionPrototypeRandom", render_mode="human", map_size_x=ma
                , predefined_schematic=predefined_schematic)
 
 model = PPO.load(
-    "Models/AdjMap_Only/Simplified_Obs_Space/ppo_Construction_Prototype_10x10_AdjMap_Only_Simplified_3000000.zip")
+    "Models/ppo_Construction_Prototype_10x10_AdjMap_Only_Simplified_3000000.zip")
 
 # model = None
 obs, info = env.reset()

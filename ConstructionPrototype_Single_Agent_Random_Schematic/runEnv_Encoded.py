@@ -8,7 +8,7 @@ import envRegistration
 envRegistration.registerEnv()
 
 # Set up autoencoder
-autoencoder_path = "Autoencoder_Model_Pairs/3/autoenc_numSamples100000_epochs500_activationReLU_numLayers1_numHidden1024latSpace25_simplified_directSampling.pth"
+autoencoder_path = "Autoencoder_Model_Pairs/3/autoenc.pth"
 autoenc = Autoencoder(num_layers_dec=1, num_layers_enc=1, hidden_dim=1024, latent_space_size=25,
                       input_dim=49,
                       activation=torch.nn.ReLU)
@@ -24,7 +24,7 @@ predefined_schematic = None  # Set to None for random schematics
 env = gym.make("ConstructionPrototypeRandom_Encoded", render_mode="human", map_size_x=map_size_x, map_size_y=map_size_y
                , predefined_schematic=predefined_schematic,autoencoder=autoenc)
 
-model = PPO.load("Autoencoder_Model_Pairs/3/ppo_Construction_Encoded_10x10_AdjMap_Only_25ls_1024numHid_simplified_direct_sampling_1000000.zip")
+model = PPO.load("Autoencoder_Model_Pairs/3/model.zip")
 
 
 obs, info = env.reset()

@@ -8,8 +8,8 @@ import numpy as np
 import torch
 from torch import nn
 
-
 from envRegistration import registerEnv
+
 registerEnv()
 
 
@@ -54,10 +54,11 @@ def get_avg_reconstruction_score(autoencoder, tensor_data):
 
 
 # Create and sample environment
-env = gym.make("ConstructionCollisionsConstrained", render_mode="none")
+n_constructors = 10
+env = gym.make("ConstructionSupport", render_mode="none", n_constructors=n_constructors)
 
-number_of_observation_space_samples = 100000
-observation_space_sample_data = sample_obs(n=number_of_observation_space_samples,sampling_method="direct")
+number_of_observation_space_samples = 200000
+observation_space_sample_data = sample_obs(n=number_of_observation_space_samples, sampling_method="direct")
 
 # Train/test split
 train_test_data_split = 0.8  # 80:20 train/test data split
@@ -73,7 +74,7 @@ x_tensor_test = torch.tensor(X_test, dtype=torch.float32)
 activation_functions = [nn.ReLU]
 number_of_layers_encoder = [1]
 number_of_layers_decoder = [1]
-hidden_layer_neurons = [2048]
+hidden_layer_neurons = [1024]
 latent_space_size = [25]
 
 hyperparameters = list(itertools.product(activation_functions, number_of_layers_encoder,
@@ -108,7 +109,7 @@ for activation, num_layers_enc, num_layers_dec, hid_layer_neurons, lat_space_siz
         if experiment_repetitions == 1:  # Save model if we are not performing hyperparameter search
             # Save the autoencoder model
             print("Saving Model")
-            model_save_path = f"Saved_Autoencoders/autoenc_numSamples{number_of_observation_space_samples}_epochs{epochs}_activation{activation.__name__}_numLayers{num_layers_enc}_numHidden{hid_layer_neurons}_latSpace{lat_space_size}_directSampling.pth"
+            model_save_path = f"Saved_Autoencoders/autoenc_numSamples{number_of_observation_space_samples}_epochs{epochs}_activation{activation.__name__}_numLayers{num_layers_enc}_numHidden{hid_layer_neurons}_latSpace{lat_space_size}_directSampling_nconst{n_constructors}.pth"
             torch.save(autoenc.state_dict(), f=model_save_path)
             print("Model Saved")
 
@@ -133,6 +134,7 @@ for activation, num_layers_enc, num_layers_dec, hid_layer_neurons, lat_space_siz
     })
 
 df = pd.DataFrame(results)
-df.to_csv(f"Autoencoder_hyperparameter_search_results_epochs{epochs}_learningRate{learning_rate}_simplified_direct_sampling.csv",
-          index=False)
+df.to_csv(
+    f"Autoencoder_hyperparameter_search_results_epochs{epochs}_learningRate{learning_rate}_simplified_direct_sampling.csv",
+    index=False)
 print("Results saved")

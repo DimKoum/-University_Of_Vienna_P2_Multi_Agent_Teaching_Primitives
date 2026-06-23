@@ -13,7 +13,7 @@ def getEuclideanDistance(originCords, endCords):
     return euclideanDistance
 
 
-class ConstructionPrototypeRandom(gym.Env):
+class ConstructionCollisionsConstrained(gym.Env):
     def __init__(self, render_mode, map_size_x=10, map_size_y=10, predefined_schematic=None):
 
         self.map_size_X = map_size_x
@@ -35,15 +35,23 @@ class ConstructionPrototypeRandom(gym.Env):
         self.ground_map = np.zeros((self.map_size_X, self.map_size_Y))
 
         self.schematic_blocks = []
+        self.obstacle_blocks = []
         self.predefined_schematic = predefined_schematic
 
         if self.predefined_schematic is None:
             # Random number of schematics with the max being map_size_x * map_size_y divided by 2
             self.number_of_schematic_blocks = random.randint(0, np.abs(self.map_size_Y * self.map_size_Y) / 2)
 
+            # Number of obstacles is half of the number of schematic blocks
+            self.number_of_obstacle_blocks = self.number_of_schematic_blocks // 2
+
             # Set up random sample coordinates for the blocks
             all_coords = [(x, y) for x in range(self.map_size_X) for y in range(self.map_size_Y)]
             self.schematic_blocks = random.sample(all_coords, self.number_of_schematic_blocks)
+
+            remaining_coords = list(set(all_coords) - set(self.schematic_blocks))
+
+            self.obstacle_blocks = random.sample(remaining_coords, self.number_of_obstacle_blocks)
         else:
             self.schematic_blocks = predefined_schematic.copy()
 
@@ -64,13 +72,17 @@ class ConstructionPrototypeRandom(gym.Env):
             ),
         })
 
+        self.collided = False
+
         # Info metrics
         self.episode_timesteps = 0
         self.total_build_actions = 0
+        self.number_of_collisions = 0
 
         #Info lists
         self.episode_timesteps_list = []
         self.correct_build_actions_ratios = []
+        self.episode_number_of_collisions_list = []
 
     def _get_obs(self):
         return {
@@ -134,8 +146,9 @@ class ConstructionPrototypeRandom(gym.Env):
     def _get_info(self):
 
         return {
-            "episode_timesteps": self.episode_timesteps_list,
-            "episode_correct_build_action_ratios": self.correct_build_actions_ratios
+            "timesteps": self.episode_timesteps_list,
+            "correct_build_action_ratio": self.correct_build_actions_ratios,
+            "number_of_collisions": self.episode_number_of_collisions_list,
         }
 
     def reset(self, seed=None, options=None):
@@ -149,10 +162,15 @@ class ConstructionPrototypeRandom(gym.Env):
         if self.predefined_schematic is None:
             # Random number of schematics with the max being map_size_x * map_size_y divided by 2
             self.number_of_schematic_blocks = random.randint(0, np.abs(self.map_size_Y * self.map_size_Y) / 2)
+            self.number_of_obstacle_blocks = self.number_of_schematic_blocks // 2
 
             # Set up random sample coordinates for the blocks
             all_coords = [(x, y) for x in range(self.map_size_X) for y in range(self.map_size_Y)]
             self.schematic_blocks = random.sample(all_coords, self.number_of_schematic_blocks)
+
+            remaining_coords = list(set(all_coords) - set(self.schematic_blocks))
+
+            self.obstacle_blocks = random.sample(remaining_coords, self.number_of_obstacle_blocks)
         else:
             self.schematic_blocks = self.predefined_schematic.copy()
 
@@ -163,12 +181,14 @@ class ConstructionPrototypeRandom(gym.Env):
         if self.total_build_actions != 0:
             self.episode_timesteps_list.append(self.episode_timesteps)
             self.correct_build_actions_ratios.append(self.number_of_correctly_placed_blocks / self.total_build_actions)
+            self.episode_number_of_collisions_list.append(self.number_of_collisions)
 
         # Reset episode metrics
 
         self.number_of_correctly_placed_blocks = 0
         self.episode_timesteps = 0
         self.total_build_actions = 0
+        self.number_of_collisions = 0
 
         return observation, info
 
@@ -176,19 +196,31 @@ class ConstructionPrototypeRandom(gym.Env):
 
         if movementType == "right":
             if entity.x < self.map_size_X - 1:
-                entity.moveRight()
+                if self.ground_map[entity.x + 1][entity.y] == -1:
+                    self.collided = True
+                else:
+                    entity.moveRight()
 
         if movementType == "left":
             if entity.x > 0:
-                entity.moveLeft()
+                if self.ground_map[entity.x - 1][entity.y] == -1:
+                    self.collided = True
+                else:
+                    entity.moveLeft()
 
         if movementType == "down":
             if entity.y < self.map_size_Y - 1:
-                entity.moveDown()
+                if self.ground_map[entity.x][entity.y + 1] == -1:
+                    self.collided = True
+                else:
+                    entity.moveDown()
 
         if movementType == "up":
             if entity.y > 0:
-                entity.moveUp()
+                if self.ground_map[entity.x][entity.y - 1] == -1:
+                    self.collided = True
+                else:
+                    entity.moveUp()
 
     def action_map(self, action, entity):
         if isinstance(entity, RepairUnit):
@@ -221,6 +253,9 @@ class ConstructionPrototypeRandom(gym.Env):
         for schematic_block in self.schematic_blocks:
             self.ground_map[schematic_block[0]][schematic_block[1]] = 1
 
+        for obstacle_block in self.obstacle_blocks:
+            self.ground_map[obstacle_block[0]][obstacle_block[1]] = -1
+
         for placed_block in self.placed_blocks:
             # Check if placed blocks align with the schematic
             if self.ground_map[placed_block[0]][placed_block[1]] == 1:
@@ -237,6 +272,12 @@ class ConstructionPrototypeRandom(gym.Env):
                 reward += 5
             elif repairUnit.isConstructing and self.ground_map[self.test_Repair_Unit.x][self.test_Repair_Unit.y] != 1:
                 reward -= 1
+
+            # Penalize the unit if it's stepping on an obstacle tile
+            if self.collided:
+                reward -= 10
+                self.number_of_collisions += 1
+                self.collided = False  # Reset collision indicator
 
             if repairUnit.isConstruction_done():
                 self.total_build_actions += 1

@@ -13,8 +13,8 @@ def getEuclideanDistance(originCords, endCords):
     return euclideanDistance
 
 
-class ConstructionPrototypeRandom(gym.Env):
-    def __init__(self, render_mode, map_size_x=10, map_size_y=10, predefined_schematic=None):
+class ConstructionPrototypeRandomOriginal(gym.Env):
+    def __init__(self, render_mode, map_size_x=20, map_size_y=20, predefined_schematic=None):
 
         self.map_size_X = map_size_x
         self.map_size_Y = map_size_y
@@ -56,25 +56,40 @@ class ConstructionPrototypeRandom(gym.Env):
         self.action_space = gym.spaces.Discrete(5)
 
         self.observation_space = spaces.Dict({
-            "adjacency_map": spaces.Box(
-                low=-1,
-                high=1,
-                shape=(7, 7),
+
+            "agent_pos": spaces.Box(
+                low=np.array([0, 0], dtype=np.int32),
+                high=np.array([9999, 9999], dtype=np.int32),
                 dtype=np.int32
             ),
+
+            "adjacency_map": spaces.Box(
+                low=-1,
+                high=3,
+                shape=(3, 3),
+                dtype=np.int32
+            ),
+
+            "closest_schematic_pos": spaces.Box(
+                low=np.array([0, 0], dtype=np.int32),
+                high=np.array([9999, 9999], dtype=np.int32),
+                dtype=np.int32
+            )
         })
 
         # Info metrics
         self.episode_timesteps = 0
         self.total_build_actions = 0
 
-        #Info lists
+        # Info lists
         self.episode_timesteps_list = []
         self.correct_build_actions_ratios = []
 
     def _get_obs(self):
         return {
-            "adjacency_map": self.get_Adjacency_Map(self.test_Repair_Unit, size=7)
+            "agent_pos": np.array([self.test_Repair_Unit.x, self.test_Repair_Unit.y], dtype=np.int32),
+            "adjacency_map": self.get_3x3_Adjacency_Map(self.test_Repair_Unit),
+            "closest_schematic_pos": self.getClosestSchematicTile([self.test_Repair_Unit.x, self.test_Repair_Unit.y])
         }
 
     def getClosestSchematicTile(self, own_coordinates):
@@ -98,16 +113,13 @@ class ConstructionPrototypeRandom(gym.Env):
 
         return minDistanceTile
 
-    def get_Adjacency_Map(self, repair_unit, size=3):
-        if size % 2 != 1:
-            raise Exception(
-                "Agent adjacency map size must not be divisible by 2, try sizes such as 3,5 for 3x3 and 5x5 maps")
-        adjacency_map = np.zeros([size, size])
+    def get_3x3_Adjacency_Map(self, repair_unit):
+        adjacency_map = np.zeros([3, 3])
 
         repair_unit_x = repair_unit.x
         repair_unit_y = repair_unit.y
 
-        coordinate_search_range = np.arange(step=1, start=-(size // 2), stop=(size // 2) + 1)
+        coordinate_search_range = np.arange(step=1, start=-1, stop=2)
 
         for i in range(len(coordinate_search_range)):
             for j in range(len(coordinate_search_range)):
@@ -124,11 +136,6 @@ class ConstructionPrototypeRandom(gym.Env):
                     continue
 
                 adjacency_map[i][j] = self.ground_map[x_to_check][y_to_check]
-
-                # A simplification of the adjacency map for the agent. Set all positions with a state id of 1 or above to 0
-                if adjacency_map[i][j] > 1:
-                    adjacency_map[i][j] = 0
-
         return adjacency_map.transpose()
 
     def _get_info(self):
@@ -174,32 +181,32 @@ class ConstructionPrototypeRandom(gym.Env):
 
     def movement_Intent(self, entity, movementType):
 
-        if movementType == "right":
-            if entity.x < self.map_size_X - 1:
+        if movementType == self.test_Repair_Unit.moveRight():
+            if entity.x <= self.map_size_X:
                 entity.moveRight()
 
-        if movementType == "left":
+        if movementType == self.test_Repair_Unit.moveLeft():
             if entity.x > 0:
                 entity.moveLeft()
 
-        if movementType == "down":
-            if entity.y < self.map_size_Y - 1:
+        if movementType == self.test_Repair_Unit.moveDown():
+            if entity.y <= self.map_size_Y:
                 entity.moveDown()
 
-        if movementType == "up":
+        if movementType == self.test_Repair_Unit.moveUp():
             if entity.y > 0:
                 entity.moveUp()
 
     def action_map(self, action, entity):
         if isinstance(entity, RepairUnit):
             if action == 0 and not entity.isConstructing:
-                self.movement_Intent(entity=self.test_Repair_Unit, movementType="right")
+                self.movement_Intent(entity=self.test_Repair_Unit, movementType=self.test_Repair_Unit.moveRight())
             if action == 1 and not entity.isConstructing:
-                self.movement_Intent(entity=self.test_Repair_Unit, movementType="left")
+                self.movement_Intent(entity=self.test_Repair_Unit, movementType=self.test_Repair_Unit.moveLeft())
             if action == 2 and not entity.isConstructing:
-                self.movement_Intent(entity=self.test_Repair_Unit, movementType="up")
+                self.movement_Intent(entity=self.test_Repair_Unit, movementType=self.test_Repair_Unit.moveUp())
             if action == 3 and not entity.isConstructing:
-                self.movement_Intent(entity=self.test_Repair_Unit, movementType="down")
+                self.movement_Intent(entity=self.test_Repair_Unit, movementType=self.test_Repair_Unit.moveDown())
             if action == 4 and not entity.isConstructing and (
                     self.ground_map[entity.x][entity.y] == 0 or self.ground_map[entity.x][entity.y] == 1):
                 self.test_Repair_Unit.begin_Construction()
@@ -240,11 +247,10 @@ class ConstructionPrototypeRandom(gym.Env):
 
             if repairUnit.isConstruction_done():
                 self.total_build_actions += 1
-
                 self.placed_blocks.append((self.test_Repair_Unit.x, self.test_Repair_Unit.y))
                 # Construction rewards and penalties
 
-                # Check If the built tile is wrongly placed and perform more updates on the ground map
+                # If the built tile is wrongly placed and perform more updates on the ground map
                 if self.ground_map[self.test_Repair_Unit.x][self.test_Repair_Unit.y] != 1:
                     reward += -5
                     self.ground_map[self.test_Repair_Unit.x][self.test_Repair_Unit.y] = 3
@@ -262,22 +268,19 @@ class ConstructionPrototypeRandom(gym.Env):
 
         observation = self._get_obs()
 
-        closest_schematic_tile = self.getClosestSchematicTile([self.test_Repair_Unit.x, self.test_Repair_Unit.y])
-
         # Give the repair unit a reward for getting closer to schematic tiles
         if self.previous_closest_distance_to_schematic is None:
             distance = getEuclideanDistance([self.test_Repair_Unit.x, self.test_Repair_Unit.y],
-                                            closest_schematic_tile)
+                                            observation["closest_schematic_pos"])
             self.previous_closest_distance_to_schematic = distance
         else:
             current_distance = getEuclideanDistance([self.test_Repair_Unit.x, self.test_Repair_Unit.y],
-                                                    closest_schematic_tile)
+                                                    observation["closest_schematic_pos"])
             if current_distance < self.previous_closest_distance_to_schematic:
                 self.previous_closest_distance_to_schematic = current_distance
                 reward += 1
 
         info = self._get_info()
-
         self.episode_timesteps += 1
 
         return observation, reward, terminated, truncated, info

@@ -13,7 +13,7 @@ envRegistration.registerEnv()
 def build_autoencoder(autoenc_path = None):
 
     # Set up model autoencoder
-    autoencoder_path = f"Saved_Autoencoders/autoenc_numSamples100000_epochs100_activationReLU_numLayers1_numHidden256_latSpace25_simplified_directSampling.pth"
+    autoencoder_path = f"Saved_Autoencoders/autoenc_numSamples100000_epochs100_activationReLU_numLayers1_numHidden1024_latSpace25_simplified_directSampling.pth"
     autoenc = Autoencoder(num_layers_dec=1, num_layers_enc=1, hidden_dim=num_hidden_neurons,
                           latent_space_size=latent_observation_space_size,
                           input_dim=49,
