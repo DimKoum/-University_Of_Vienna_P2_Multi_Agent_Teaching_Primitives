@@ -40,7 +40,7 @@ class ConstructionCollisions(gym.Env):
 
         if self.predefined_schematic is None:
             # Random number of schematics with the max being map_size_x * map_size_y divided by 2
-            self.number_of_schematic_blocks = random.randint(0, np.abs(self.map_size_Y * self.map_size_Y) / 2)
+            self.number_of_schematic_blocks = random.randint(0, np.abs(self.map_size_Y * self.map_size_Y) // 2)
 
             # Number of obstacles is half of the number of schematic blocks
             self.number_of_obstacle_blocks = self.number_of_schematic_blocks // 2
@@ -88,6 +88,10 @@ class ConstructionCollisions(gym.Env):
         }
 
     def getClosestSchematicTile(self, own_coordinates):
+        """
+            :param own_coordinates: Set of coordinates (Array)
+            :return: Coordinates of the closest schematic tile to the input coordinates
+        """
         minDistanceTile = None
         minDistance = math.inf
 
@@ -109,6 +113,11 @@ class ConstructionCollisions(gym.Env):
         return minDistanceTile
 
     def get_Adjacency_Map(self, repair_unit, size=3):
+        """
+                :param repair_unit: Repair unit worker to get the adjacency map for.
+                :Size repair_unit: Size of the adjacency map (Must have a remainder of 1 when divided by 2.
+                :return: The "size" x "size" adjacency map with the agent represented at the center.
+        """
         if size % 2 != 1:
             raise Exception(
                 "Agent adjacency map size must not be divisible by 2, try sizes such as 3,5 for 3x3 and 5x5 maps")
@@ -159,7 +168,7 @@ class ConstructionCollisions(gym.Env):
         self.schematic_blocks.clear()
         if self.predefined_schematic is None:
             # Random number of schematics with the max being map_size_x * map_size_y divided by 2
-            self.number_of_schematic_blocks = random.randint(0, np.abs(self.map_size_Y * self.map_size_Y) / 2)
+            self.number_of_schematic_blocks = random.randint(0, np.abs(self.map_size_Y * self.map_size_Y) // 2)
             self.number_of_obstacle_blocks = self.number_of_schematic_blocks // 2
 
             # Set up random sample coordinates for the blocks

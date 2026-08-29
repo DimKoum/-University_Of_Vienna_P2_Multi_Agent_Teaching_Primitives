@@ -39,7 +39,7 @@ class ConstructionPrototypeRandomOriginal(gym.Env):
 
         if self.predefined_schematic is None:
             # Random number of schematics with the max being map_size_x * map_size_y divided by 2
-            self.number_of_schematic_blocks = random.randint(0, np.abs(self.map_size_Y * self.map_size_Y) / 2)
+            self.number_of_schematic_blocks = random.randint(0, np.abs(self.map_size_Y * self.map_size_Y) // 2)
 
             # Set up random sample coordinates for the blocks
             all_coords = [(x, y) for x in range(self.map_size_X) for y in range(self.map_size_Y)]
@@ -93,6 +93,10 @@ class ConstructionPrototypeRandomOriginal(gym.Env):
         }
 
     def getClosestSchematicTile(self, own_coordinates):
+        """
+            :param own_coordinates: Set of coordinates (Array)
+            :return: Coordinates of the closest schematic tile to the input coordinates
+        """
         minDistanceTile = None
         minDistance = math.inf
 
@@ -114,6 +118,11 @@ class ConstructionPrototypeRandomOriginal(gym.Env):
         return minDistanceTile
 
     def get_3x3_Adjacency_Map(self, repair_unit):
+        """
+            :param repair_unit: Repair unit worker to get the adjacency map for.
+            :Size repair_unit: Size of the adjacency map (Must have a remainder of 1 when divided by 2.
+            :return: The "size" x "size" adjacency map with the agent represented at the center.
+        """
         adjacency_map = np.zeros([3, 3])
 
         repair_unit_x = repair_unit.x
@@ -155,7 +164,7 @@ class ConstructionPrototypeRandomOriginal(gym.Env):
         self.schematic_blocks.clear()
         if self.predefined_schematic is None:
             # Random number of schematics with the max being map_size_x * map_size_y divided by 2
-            self.number_of_schematic_blocks = random.randint(0, np.abs(self.map_size_Y * self.map_size_Y) / 2)
+            self.number_of_schematic_blocks = random.randint(0, np.abs(self.map_size_Y * self.map_size_Y) // 2)
 
             # Set up random sample coordinates for the blocks
             all_coords = [(x, y) for x in range(self.map_size_X) for y in range(self.map_size_Y)]

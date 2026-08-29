@@ -29,6 +29,11 @@ class ConstructionPrototypeRandomEncoded(ConstructionPrototypeRandom):
         return encoded_np
 
     def get_Adjacency_Map(self, repair_unit, size=3):
+        """
+            :param repair_unit: Repair unit worker to get the adjacency map for.
+            :Size repair_unit: Size of the adjacency map (Must have a remainder of 1 when divided by 2.
+            :return: The "size" x "size" adjacency map with the agent represented at the center.
+        """
         if size % 2 != 1:
             raise Exception(
                 "Agent adjacency map size must not be divisible by 2, try sizes such as 3,5 for 3x3 and 5x5 maps")
