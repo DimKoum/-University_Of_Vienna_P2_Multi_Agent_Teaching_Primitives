@@ -18,7 +18,7 @@ IDE: PyCharm 2024.1.4 (Community Edition)
 
 After creating a new project that uses python 3.9, install the dependencies and move the environment files under the project root, all environments have a `runEnv.py` file that can be used to run the corresponding environment. 
 
-## Common File Names Among Environments
+## Common File Names Between Environments
 - `runEnv.py` : Script that runs and renders the environment meant for quick inspection.
 - `runEnv_Encoded` : Just like runEnv.py but runs a version of the environment requiring an autoencoder.
 - `trainEnv_New_Model.py` : Script that uses stable baselines3 to train a model for the environment.
